@@ -14,6 +14,8 @@
 #include "userprog/process.h"
 #include "devices/input.h"
 
+#define DBG(format, ...) printf(format "\n", ##__VA_ARGS__);
+
 static void syscall_handler (struct intr_frame *);
 
 void
@@ -50,8 +52,23 @@ syscall_handler (struct intr_frame *f)
     {
     case SYS_HALT:
       {
-	printf ("# Systemcall HALT executing...\n");
-	halt();
+	DBG("# Running power_off() %i %s", __LINE__, __FILE__);
+	power_off();
+	break;
+      }
+    case SYS_EXIT:
+      {
+	DBG("# Running sys_call exit() Return value: %i %i %s", esp[1], __LINE__, __FILE__);
+        thread_exit();
+	break;
+      }
+    case SYS_READ:
+      {
+	
+	break;
+      }
+    case SYS_WRITE:
+      {
 	break;
       }
     default:

@@ -14,6 +14,8 @@
 #include "userprog/process.h"
 #include "devices/input.h"
 
+#define DBG(format, ...) printf(format "\n", ##__VA_ARGS__);
+
 static void syscall_handler (struct intr_frame *);
 
 void
@@ -50,9 +52,55 @@ syscall_handler (struct intr_frame *f)
     {
     case SYS_HALT:
       {
-	printf ("# Systemcall HALT executing...\n");
-	halt();
+	DBG("# Running power_off() %i %s", __LINE__, __FILE__);
+	power_off();
 	break;
+      }
+    case SYS_EXIT:
+      {
+	DBG("# Running sys_call exit() Return value: %i %i %s", esp[1], __LINE__, __FILE__);
+        thread_exit();
+	break;
+      }
+    case SYS_READ:
+      {
+	//DBG("# Running sys_call SYS_REAED() %i %s", __LINE__, __FILE__);
+	int fd = (int)esp[1];
+        uint8_t *buffer = (uint8_t*)esp[2];
+	unsigned buffersize = (unsigned)esp[3];
+	if(fd == STDIN_FILENO){
+	  unsigned i;
+	  for(i = 0; i < buffersize; ++i){
+	    uint8_t input = input_getc();
+	    if(input == '\r'){
+	      input = '\n';
+	    }
+	    buffer[i] = input;
+	    //DBG("# Buffer: %i %i %s", buffer[i], __LINE__, __FILE__);
+	    //printf("%s", i);
+	    putbuf((const char*)&buffer[i], (size_t)1);
+	  }
+	  f->eax = esp[3];
+	}
+	else{
+	  f->eax = -1;
+	}
+	break;
+      }
+    case SYS_WRITE:
+      {
+    	int fd = (int)esp[1];
+	uint8_t *buffer = (uint8_t*)esp[2];
+	unsigned buffersize = (unsigned)esp[3];
+    	if(fd == STDOUT_FILENO)
+	  {
+	    putbuf((const char*)buffer, (size_t)buffersize);
+	    f->eax = esp[3];
+	  }
+	else{
+	  f->eax = -1;
+	}
+    	break;
       }
     default:
       {

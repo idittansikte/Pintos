@@ -24,9 +24,8 @@
 /* function passed as parameter to map_remove_if in order to free the
  * memory for all inseted values, and return true to remove them from
  * the map */
-bool do_free(key_t k UNUSED, value_t v, int aux UNUSED)
+bool do_free(key_t k UNUSED, value_t v UNUSED, int aux UNUSED)
 {
-  free(v);     /*! free memory */
   return true; /*  and remove from collection */
 }
 
@@ -43,7 +42,7 @@ void print_less(key_t k UNUSED, value_t v, int aux)
 }
 
 
-#define LOOPS 2
+#define LOOPS 5
 
 char* my_strdup(char* str)
 {
@@ -76,7 +75,7 @@ int main()
     scanf("%s", input_buffer);
     
     /*! allocates a copy of the input and inserts in map */
-    obj = my_strdup(input_buffer);
+    obj = my_strdup(input_buffer+'\0');
     id = map_insert(&container, obj);
     printf("%s", obj);
     printf(" inserted at ");
@@ -101,6 +100,7 @@ int main()
     else{
       printf("Not found!");
     }
+    printf("\n");
     /* since we leave the value in the map we may use it again and
      * should not free the memory */
   }
@@ -115,6 +115,7 @@ int main()
     obj = map_remove(&container, id);
     printf("Removed: %s",obj);
     free(obj);
+    obj = NULL;
     /*! if it was found, display it */
     obj = map_find(&container, id);
     if(obj == NULL){
@@ -122,6 +123,7 @@ int main()
     }else{
       printf("Still exist");
     }
+    printf("\n");
     /* since we removed the value from the map we will never use it again and
      * must properly free the memory (if it was allocated) */
   }
@@ -129,10 +131,10 @@ int main()
   /*! print all strings representing an integer less than N */
   printf("Will now display all values less than N. Choose N: ");
   scanf("%d", &i);
-  //map_for_each(&container, print_less, i);
+  map_for_each(&container, print_less, i);
   
   /*! free all remaining memory and remove from map */
-  //map_remove_if(&container, do_free, 0);
+  map_remove_if(&container, do_free, 0);
   
   return 0;
 }

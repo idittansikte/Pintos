@@ -82,6 +82,17 @@ syscall_handler (struct intr_frame *f)
 	  }
 	  f->eax = esp[3];
 	}
+	else if(fd >= 2){
+	  struct thread* curr_t = thread_current();
+	  struct file* file = map_find(&curr_t->file_table, fd);
+	  if(file != NULL){
+	    int32_t bytes = file_read(file, buffer, buffersize);
+	    f->eax = bytes;
+	  }
+	  else{
+	    f->eax = -1;
+	  }
+	}
 	else{
 	  f->eax = -1;
 	}
@@ -97,10 +108,91 @@ syscall_handler (struct intr_frame *f)
 	    putbuf((const char*)buffer, (size_t)buffersize);
 	    f->eax = esp[3];
 	  }
+	else if(fd >= 2 ){
+	  struct thread* curr_t = thread_current();
+	  struct file* file = map_find(&curr_t->file_table, fd);
+	  if(file != NULL){
+	    int32_t bytes = file_write(file, buffer, buffersize);
+	    f->eax = bytes;
+	  }
+	  else{
+	    f->eax = -1;
+	  }
+	}
 	else{
 	  f->eax = -1;
 	}
     	break;
+      }
+    case SYS_OPEN:
+      {
+      	struct file* fp;
+	const char* file_name = (char*)esp[1];
+      	fp = filesys_open(file_name);
+	if(fp != NULL){
+	  struct thread* curr_t = thread_current();
+	  int fd = map_insert(&curr_t->file_table, fp);
+	  printf("# open fd = %i", fd);
+	  f->eax = fd;
+	}
+	else{
+	  f->eax = -1;
+	}
+	break;
+      }
+    case SYS_CLOSE:
+      {
+	int fd = (int)esp[1];
+	struct file* fp;
+	struct thread* curr_t = thread_current();
+      	fp = map_remove(&curr_t->file_table, fd);
+	if(fp != NULL)
+	  filesys_close(fp);
+	break;
+      }
+    case SYS_CREATE:
+      {
+	const char* name = (char*)esp[1];
+	unsigned init_size = (unsigned)esp[2];
+	bool error = filesys_create(name, init_size);
+	f->eax = error;
+	break;
+      }
+    case SYS_REMOVE:
+      {
+	const char* file_name = (char*)esp[1];
+	bool error = filesys_remove(file_name);
+	f->eax = error;
+	break;
+      }
+    case SYS_SEEK:
+      {
+	int fd = (int)esp[1];
+	int32_t new_pos = (int32_t)esp[2];
+	struct thread* curr_t = thread_current();
+	struct file* file = map_find(&curr_t->file_table, fd);
+	int32_t file_len = file_length(file);
+	if(new_pos <= file_len && new_pos >= 0)
+	  file_seek(file, new_pos);
+	break;
+      }
+    case SYS_TELL:
+      {
+	int fd = (int)esp[1];
+	struct thread* curr_t = thread_current();
+	struct file* file = map_find(&curr_t->file_table, fd);
+	int32_t pos = file_tell(file);
+	f->eax = pos;
+	break;
+      }
+    case SYS_FILESIZE:
+      {
+	int fd = (int)esp[1];
+	struct thread* curr_t = thread_current();
+	struct file* file = map_find(&curr_t->file_table, fd);
+	int32_t file_len = file_length(file);
+	f->eax = file_len;
+	break;
       }
     default:
       {

@@ -14,18 +14,18 @@ void map_init(struct map* m){
 key_t map_insert(struct map* m, value_t v){
 
   int j;
-for(j = 0; j < MAP_SIZE; ++j){ // Check if value already exists
-if(m->content[j] != NULL){
-    int res = strcmp(m->content[j], v);
-if(res == 0){ // In that case, return that index...
-      return j+2;
+  for(j = 0; j < MAP_SIZE; ++j){ // Check if value already exists
+    if(m->content[j] != NULL){
+      int res = strcmp(m->content[j], v);
+      if(res == 0){ // In that case, return that index...
+	return j+2;
+      }
     }
   }
-}
   unsigned i;
-for(i = 0; i < MAP_SIZE; ++i){ // If value dont exist
+  for(i = 0; i < MAP_SIZE; ++i){ // If value dont exist
     if(m->content[i] == NULL){
-m->content[i] = v; // Insert it
+      m->content[i] = v; // Insert it
       return i+2;
     }
   }

@@ -425,13 +425,14 @@ userprog/exception.h,94
 #define PF_W 6,210
 #define PF_U 7,255
 
-userprog/flist.c,153
+userprog/flist.c,176
 void map_init(9,103
 key_t map_insert(18,256
-value_t map_find(38,686
-value_t map_remove(46,842
-void map_for_each(56,1038
-void map_remove_if(65,1245
+value_t map_find(30,484
+value_t map_remove(38,640
+void map_for_each(48,836
+void map_remove_if(57,1043
+void map_clean(69,1308
 
 userprog/flist.h,166
 #define _MAP_H_2,16
@@ -547,9 +548,9 @@ struct parameters_to_start_process50,1426
   char* command_line;52,1463
 start_process(56,1501
 start_process 112,3311
-process_wait 197,6257
-process_cleanup 224,7167
-process_activate 264,8672
+process_wait 197,6259
+process_cleanup 224,7169
+process_activate 264,8736
 
 userprog/process.h,88
 #define USERPROG_PROCESS_H2,27

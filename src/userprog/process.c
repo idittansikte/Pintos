@@ -51,6 +51,8 @@ void process_print_list()
 struct parameters_to_start_process
 {
   char* command_line;
+  bool success;
+  struct semaphore sema_wait_thread;
 };
 
 static void
@@ -69,9 +71,10 @@ process_execute (const char *command_line)
   int command_line_size = strlen(command_line) + 1;
   tid_t thread_id = -1;
   int  process_id = -1;
-
   /* LOCAL variable will cease existence when function return! */
   struct parameters_to_start_process arguments;
+  
+  sema_init(&arguments.sema_wait_thread, 0);
 
   debug("%s#%d: process_execute(\"%s\") ENTERED\n",
         thread_current()->name,
@@ -81,29 +84,34 @@ process_execute (const char *command_line)
   /* COPY command line out of parent process memory */
   arguments.command_line = malloc(command_line_size);
   strlcpy(arguments.command_line, command_line, command_line_size);
-
+  arguments.success = false;
 
   strlcpy_first_word (debug_name, command_line, 64);
-  
+
   /* SCHEDULES function `start_process' to run (LATER) */
+ 
   thread_id = thread_create (debug_name, PRI_DEFAULT,
                              (thread_func*)start_process, &arguments);
-
   process_id = thread_id;
 
+  if(process_id != -1){
+    sema_down(&arguments.sema_wait_thread);
+  }
+  
   /* AVOID bad stuff by turning off. YOU will fix this! */
-  power_off();
-  
-  
+  //power_off();
+
   /* WHICH thread may still be using this right now? */
   free(arguments.command_line);
-
   debug("%s#%d: process_execute(\"%s\") RETURNS %d\n",
         thread_current()->name,
         thread_current()->tid,
         command_line, process_id);
 
   /* MUST be -1 if `load' in `start_process' return false */
+  if(!arguments.success){
+    process_id = -1;
+  }
   return process_id;
 }
 
@@ -238,7 +246,11 @@ start_process (struct parameters_to_start_process* parameters)
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
 
+  
   success = load (file_name, &if_.eip, &if_.esp);
+
+  parameters->success = success;
+
 
   debug("%s#%d: start_process(...): load returned %d\n",
         thread_current()->name,
@@ -279,12 +291,12 @@ start_process (struct parameters_to_start_process* parameters)
      - File doeas not exist
      - File do not contain a valid program
      - Not enough memory
-  */
+  */  
+  sema_up(&parameters->sema_wait_thread);
   if ( ! success )
   {
     thread_exit ();
   }
-  
   /* Start the user process by simulating a return from an interrupt,
      implemented by intr_exit (in threads/intr-stubs.S). Because
      intr_exit takes all of its arguments on the stack in the form of

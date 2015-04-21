@@ -5,6 +5,13 @@ void bb_destroy(21,550
 int bb_read(26,631
 void bb_write(32,720
 
+threads/palloc.h,118
+#define THREADS_PALLOC_H2,25
+enum palloc_flags7,101
+    PAL_ASSERT 9,123
+    PAL_ZERO 10,179
+    PAL_USER 11,237
+
 threads/boundedbuffer.h,79
 #define BOUNDEDBUFFER_H9,206
 struct bounded_buffer 13,259
@@ -205,13 +212,6 @@ palloc_free_multiple 132,3984
 palloc_free_page 160,4611
 init_pool 168,4800
 page_from_pool 189,5510
-
-threads/palloc.h,118
-#define THREADS_PALLOC_H2,25
-enum palloc_flags7,101
-    PAL_ASSERT 9,123
-    PAL_ZERO 10,179
-    PAL_USER 11,237
 
 threads/pte.h,714
 #define THREADS_PTE_H2,22
@@ -539,18 +539,27 @@ userprog/pagedir.h,32
 userprog/plist.h,23
 #define _PLIST_H_2,18
 
-userprog/process.c,302
-#define HACK25,751
-void process_init(30,866
-void process_exit(39,1221
-void process_print_list(45,1394
-struct parameters_to_start_process50,1426
-  char* command_line;52,1463
-start_process(56,1501
-start_process 112,3311
-process_wait 197,6259
-process_cleanup 224,7169
-process_activate 264,8736
+userprog/process.c,576
+#define HACK26,771
+void process_init(31,886
+void process_exit(40,1241
+void process_print_list(46,1414
+struct parameters_to_start_process51,1446
+  char* command_line;53,1483
+  bool success;54,1505
+  struct semaphore sema_wait_thread;55,1521
+start_process(59,1574
+struct main_args119,3439
+  void (*ret)ret127,3753
+  int argc;130,3806
+  char** argv;135,3937
+static bool exists_in(141,4059
+static int count_args(154,4392
+static void* setup_main_stack(171,4730
+start_process 230,6955
+process_wait 319,10044
+process_cleanup 346,10954
+process_activate 386,12521
 
 userprog/process.h,88
 #define USERPROG_PROCESS_H2,27
@@ -724,6 +733,12 @@ filesys/off_t.h,80
 typedef int32_t off_t;9,199
 #define PROTd 13,307
 
+devices/disk.h,122
+#define DEVICES_DISK_H2,23
+#define DISK_SECTOR_SIZE 8,128
+typedef uint32_t disk_sector_t;12,239
+#define PRDSNu 16,357
+
 devices/disk.c,1649
 #define reg_data(15,365
 #define reg_error(16,433
@@ -784,11 +799,8 @@ select_device 528,15329
 select_device_wait 542,15681
 interrupt_handler 551,15838
 
-devices/disk.h,122
-#define DEVICES_DISK_H2,23
-#define DISK_SECTOR_SIZE 8,128
-typedef uint32_t disk_sector_t;12,239
-#define PRDSNu 16,357
+devices/input.h,29
+#define DEVICES_INPUT_H2,24
 
 devices/input.c,109
 static struct intq buffer;7,154
@@ -796,19 +808,6 @@ input_init 11,223
 input_putc 19,372
 input_getc 31,638
 input_full 48,934
-
-devices/input.h,29
-#define DEVICES_INPUT_H2,24
-
-devices/intq.c,137
-intq_init 11,264
-intq_empty 20,439
-intq_full 28,605
-intq_getc 39,902
-intq_putc 63,1426
-next 81,1825
-wait 89,2008
-signal 105,2520
 
 devices/intq.h,270
 #define DEVICES_INTQ_H2,23
@@ -821,33 +820,15 @@ struct intq24,750
     int head;33,1084
     int tail;34,1148
 
-devices/kbd.c,859
-#define DATA_REG 11,220
-static bool left_shift,15,317
-static bool left_shift, right_shift;15,317
-static bool left_alt,16,390
-static bool left_alt, right_alt;16,390
-static bool left_ctrl,17,461
-static bool left_ctrl, right_ctrl;17,461
-static bool caps_lock;21,593
-static int64_t key_cnt;24,647
-static intr_handler_func keyboard_interrupt;26,672
-kbd_init 30,755
-kbd_print_stats 37,881
-struct keymap43,1022
-    uint8_t first_scancode;45,1040
-    const char *chars;chars46,1094
-static const struct keymap invariant_keymap[invariant_keymap54,1483
-static const struct keymap unshifted_keymap[unshifted_keymap69,1808
-static const struct keymap shifted_keymap[shifted_keymap81,2068
-keyboard_interrupt 94,2330
-      struct shift_key 161,4115
-          unsigned scancode;163,4149
-          bool *state_var;state_var164,4178
-map_key 196,4978
-
-devices/kbd.h,27
-#define DEVICES_KBD_H2,22
+devices/intq.c,137
+intq_init 11,264
+intq_empty 20,439
+intq_full 28,605
+intq_getc 39,902
+intq_putc 63,1426
+next 81,1825
+wait 89,2008
+signal 105,2520
 
 devices/serial.c,889
 #define IO_BASE 18,488
@@ -884,8 +865,33 @@ write_ier 177,5201
 putc_poll 199,5658
 serial_interrupt 210,5856
 
-devices/serial.h,30
-#define DEVICES_SERIAL_H2,25
+devices/kbd.c,859
+#define DATA_REG 11,220
+static bool left_shift,15,317
+static bool left_shift, right_shift;15,317
+static bool left_alt,16,390
+static bool left_alt, right_alt;16,390
+static bool left_ctrl,17,461
+static bool left_ctrl, right_ctrl;17,461
+static bool caps_lock;21,593
+static int64_t key_cnt;24,647
+static intr_handler_func keyboard_interrupt;26,672
+kbd_init 30,755
+kbd_print_stats 37,881
+struct keymap43,1022
+    uint8_t first_scancode;45,1040
+    const char *chars;chars46,1094
+static const struct keymap invariant_keymap[invariant_keymap54,1483
+static const struct keymap unshifted_keymap[unshifted_keymap69,1808
+static const struct keymap shifted_keymap[shifted_keymap81,2068
+keyboard_interrupt 94,2330
+      struct shift_key 161,4115
+          unsigned scancode;163,4149
+          bool *state_var;state_var164,4178
+map_key 196,4978
+
+devices/kbd.h,27
+#define DEVICES_KBD_H2,22
 
 devices/timer.c,420
 static int64_t ticks;21,466
@@ -904,6 +910,9 @@ timer_interrupt 136,3330
 too_many_loops 145,3520
 busy_wait 169,4121
 real_time_sleep 177,4252
+
+devices/serial.h,30
+#define DEVICES_SERIAL_H2,25
 
 devices/timer.h,55
 #define DEVICES_TIMER_H2,24
@@ -927,94 +936,9 @@ find_cursor 152,3049
 devices/vga.h,27
 #define DEVICES_VGA_H2,22
 
-lib/arithmetic.c,172
-divl 26,1080
-nlz 42,1364
-udiv64 78,2084
-umod64 132,3870
-sdiv64 140,4032
-smod64 151,4385
-__divdi3 165,4784
-__moddi3 172,4891
-__udivdi3 179,5008
-__umoddi3 186,5145
-
-lib/ctype.h,533
-#define __LIB_CTYPE_H2,22
-static inline int islower 4,45
-static inline int isupper 5,112
-static inline int isalpha 6,179
-static inline int isdigit 7,252
-static inline int isalnum 8,319
-static inline int isxdigit 9,392
-static inline int isspace 12,505
-static inline int isblank 16,639
-static inline int isgraph 17,707
-static inline int isprint 18,771
-static inline int iscntrl 19,836
-static inline int isascii 20,913
-static inline int ispunct 21,977
-static inline int tolower 25,1070
-static inline int toupper 26,1148
-
-lib/debug.c,24
-debug_backtrace 13,360
-
-lib/debug.h,377
-#define __LIB_DEBUG_H2,22
-#define debug(7,220
-#define UNUSED 12,420
-#define NO_RETURN 13,460
-#define NO_INLINE 14,505
-#define PRINTF_FORMAT(15,550
-#define PANIC(19,747
-void debug_panic 21,823
-#define PART 26,1071
-#undef ASSERT33,1222
-#undef NOT_REACHED34,1236
-#define ASSERT(37,1271
-#define NOT_REACHED(41,1479
-#define ASSERT(43,1552
-#define NOT_REACHED(44,1589
-
-lib/inttypes.h,858
-#define __LIB_INTTYPES_H2,25
-#define PRId8 6,72
-#define PRIi8 7,92
-#define PRIo8 8,112
-#define PRIu8 9,132
-#define PRIx8 10,152
-#define PRIX8 11,172
-#define PRId16 13,193
-#define PRIi16 14,213
-#define PRIo16 15,233
-#define PRIu16 16,253
-#define PRIx16 17,273
-#define PRIX16 18,293
-#define PRId32 20,314
-#define PRIi32 21,333
-#define PRIo32 22,352
-#define PRIu32 23,371
-#define PRIx32 24,390
-#define PRIX32 25,409
-#define PRId64 27,429
-#define PRIi64 28,450
-#define PRIo64 29,471
-#define PRIu64 30,492
-#define PRIx64 31,513
-#define PRIX64 32,534
-#define PRIdMAX 34,556
-#define PRIiMAX 35,577
-#define PRIoMAX 36,598
-#define PRIuMAX 37,619
-#define PRIxMAX 38,640
-#define PRIXMAX 39,661
-#define PRIdPTR 41,683
-#define PRIiPTR 42,704
-#define PRIoPTR 43,725
-#define PRIuPTR 44,746
-#define PRIxPTR 45,767
-#define PRIXPTR 46,788
+lib/kernel/bitmap.h,65
+#define __LIB_KERNEL_BITMAP_H2,30
+#define BITMAP_ERROR 36,1307
 
 lib/kernel/bitmap.c,789
 typedef unsigned long elem_type;19,444
@@ -1050,10 +974,6 @@ bitmap_file_size 334,8765
 bitmap_read 342,8924
 bitmap_write 357,9297
 bitmap_dump 368,9560
-
-lib/kernel/bitmap.h,65
-#define __LIB_KERNEL_BITMAP_H2,30
-#define BITMAP_ERROR 36,1307
 
 lib/kernel/console.c,440
 static struct lock console_lock;18,525
@@ -1202,6 +1122,156 @@ lib/kernel/slist.h,210
 
 lib/kernel/stdio.h,34
 #define __LIB_KERNEL_STDIO_H2,29
+
+lib/user/console.c,235
+vprintf 9,174
+hprintf 16,336
+puts 31,604
+putchar 41,737
+struct vhprintf_aux 49,864
+    char buf[buf51,889
+    char *p;p52,937
+    int char_cnt;53,995
+    int handle;54,1058
+vhprintf 64,1332
+add_char 78,1652
+flush 89,1865
+
+lib/user/debug.c,20
+debug_panic 10,233
+
+lib/user/entry.c,13
+_start 7,92
+
+lib/user/stdio.h,50
+#define __LIB_USER_STDIO_H2,27
+int hprintf 4,55
+
+lib/user/syscall.c,416
+#define syscall0(6,146
+#define syscall1(19,850
+#define syscall2(33,1720
+#define syscall3(49,2639
+halt 65,3514
+exit 72,3578
+exec 79,3656
+wait 85,3733
+create 91,3795
+remove 97,3906
+open 103,3979
+filesize 109,4048
+read 115,4114
+write 121,4214
+seek 127,4323
+tell 133,4408
+close 139,4467
+mmap 145,4523
+munmap 151,4599
+chdir 157,4664
+mkdir 163,4734
+readdir 169,4804
+isdir 175,4907
+inumber 181,4967
+
+lib/user/syscall.h,247
+#define __LIB_USER_SYSCALL_H2,29
+typedef int pid_t;8,126
+#define PID_ERROR 9,145
+typedef int mapid_t;12,206
+#define MAP_FAILED 13,227
+#define READDIR_MAX_LEN 16,323
+#define EXIT_SUCCESS 19,416
+#define EXIT_FAILURE 20,476
+void halt 23,587
+
+lib/arithmetic.c,172
+divl 26,1080
+nlz 42,1364
+udiv64 78,2084
+umod64 132,3870
+sdiv64 140,4032
+smod64 151,4385
+__divdi3 165,4784
+__moddi3 172,4891
+__udivdi3 179,5008
+__umoddi3 186,5145
+
+lib/ctype.h,533
+#define __LIB_CTYPE_H2,22
+static inline int islower 4,45
+static inline int isupper 5,112
+static inline int isalpha 6,179
+static inline int isdigit 7,252
+static inline int isalnum 8,319
+static inline int isxdigit 9,392
+static inline int isspace 12,505
+static inline int isblank 16,639
+static inline int isgraph 17,707
+static inline int isprint 18,771
+static inline int iscntrl 19,836
+static inline int isascii 20,913
+static inline int ispunct 21,977
+static inline int tolower 25,1070
+static inline int toupper 26,1148
+
+lib/debug.c,24
+debug_backtrace 13,360
+
+lib/debug.h,377
+#define __LIB_DEBUG_H2,22
+#define debug(7,220
+#define UNUSED 12,420
+#define NO_RETURN 13,460
+#define NO_INLINE 14,505
+#define PRINTF_FORMAT(15,550
+#define PANIC(19,747
+void debug_panic 21,823
+#define PART 26,1071
+#undef ASSERT33,1222
+#undef NOT_REACHED34,1236
+#define ASSERT(37,1271
+#define NOT_REACHED(41,1479
+#define ASSERT(43,1552
+#define NOT_REACHED(44,1589
+
+lib/inttypes.h,858
+#define __LIB_INTTYPES_H2,25
+#define PRId8 6,72
+#define PRIi8 7,92
+#define PRIo8 8,112
+#define PRIu8 9,132
+#define PRIx8 10,152
+#define PRIX8 11,172
+#define PRId16 13,193
+#define PRIi16 14,213
+#define PRIo16 15,233
+#define PRIu16 16,253
+#define PRIx16 17,273
+#define PRIX16 18,293
+#define PRId32 20,314
+#define PRIi32 21,333
+#define PRIo32 22,352
+#define PRIu32 23,371
+#define PRIx32 24,390
+#define PRIX32 25,409
+#define PRId64 27,429
+#define PRIi64 28,450
+#define PRIo64 29,471
+#define PRIu64 30,492
+#define PRIx64 31,513
+#define PRIX64 32,534
+#define PRIdMAX 34,556
+#define PRIiMAX 35,577
+#define PRIoMAX 36,598
+#define PRIuMAX 37,619
+#define PRIxMAX 38,640
+#define PRIXMAX 39,661
+#define PRIdPTR 41,683
+#define PRIiPTR 42,704
+#define PRIoPTR 43,725
+#define PRIuPTR 44,746
+#define PRIxPTR 45,767
+#define PRIXPTR 46,788
 
 lib/limits.h,528
 #define __LIB_LIMITS_H2,23
@@ -1419,67 +1489,6 @@ lib/syscall-nr.h,509
     SYS_ISDIR,30,1321
     SYS_INUMBER,31,1397
     SYS_NUMBER_OF_CALLS33,1475
-
-lib/user/console.c,235
-vprintf 9,174
-hprintf 16,336
-puts 31,604
-putchar 41,737
-struct vhprintf_aux 49,864
-    char buf[buf51,889
-    char *p;p52,937
-    int char_cnt;53,995
-    int handle;54,1058
-vhprintf 64,1332
-add_char 78,1652
-flush 89,1865
-
-lib/user/debug.c,20
-debug_panic 10,233
-
-lib/user/entry.c,13
-_start 7,92
-
-lib/user/stdio.h,50
-#define __LIB_USER_STDIO_H2,27
-int hprintf 4,55
-
-lib/user/syscall.c,416
-#define syscall0(6,146
-#define syscall1(19,850
-#define syscall2(33,1720
-#define syscall3(49,2639
-halt 65,3514
-exit 72,3578
-exec 79,3656
-wait 85,3733
-create 91,3795
-remove 97,3906
-open 103,3979
-filesize 109,4048
-read 115,4114
-write 121,4214
-seek 127,4323
-tell 133,4408
-close 139,4467
-mmap 145,4523
-munmap 151,4599
-chdir 157,4664
-mkdir 163,4734
-readdir 169,4804
-isdir 175,4907
-inumber 181,4967
-
-lib/user/syscall.h,247
-#define __LIB_USER_SYSCALL_H2,29
-typedef int pid_t;8,126
-#define PID_ERROR 9,145
-typedef int mapid_t;12,206
-#define MAP_FAILED 13,227
-#define READDIR_MAX_LEN 16,323
-#define EXIT_SUCCESS 19,416
-#define EXIT_FAILURE 20,476
-void halt 23,587
 
 userprog/plist.c,0
 

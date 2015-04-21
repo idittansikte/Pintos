@@ -8,11 +8,9 @@
 
 void map_init(struct map* m){
   unsigned i;
-  printf("Before\n");
   for(i = 0; i < MAP_SIZE; ++i){
     m->content[i] = NULL;
   }
-  printf("After\n");
 }
 
 key_t map_insert(struct map* m, value_t v){
@@ -59,7 +57,7 @@ void map_remove_if(struct map* m, bool (*cond)(key_t k, value_t v, int aux), int
   for(i = 0; i < MAP_SIZE; ++i){
     if(m->content[i] != NULL){
       if(cond(i, m->content[i], aux)){
-	free(m->content[i]);
+	//free(m->content[i]);
 	m->content[i] = NULL;
       }
     }
@@ -70,7 +68,7 @@ void map_clean(struct map* m){
   int i;
   for(i = 0; i < MAP_SIZE; ++i){
     if(m->content[i] != NULL){
-      free(m->content[i]);
+      //free(m->content[i]);
       m->content[i] = NULL;
     }
   }

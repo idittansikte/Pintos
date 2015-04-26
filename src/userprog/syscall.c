@@ -13,6 +13,7 @@
 #include "userprog/pagedir.h"
 #include "userprog/process.h"
 #include "devices/input.h"
+#include "devices/timer.h"
 
 #define DBG(format, ...) printf(format "\n", ##__VA_ARGS__);
 
@@ -132,7 +133,7 @@ syscall_handler (struct intr_frame *f)
 	if(fp != NULL){
 	  struct thread* curr_t = thread_current();
 	  int fd = map_insert(&curr_t->file_table, fp);
-	  printf("# open fd = %i", fd);
+	  DBG("# open fd = %i | %i %s |", fd, __LINE__, __FILE__);
 	  f->eax = fd;
 	}
 	else{
@@ -192,6 +193,25 @@ syscall_handler (struct intr_frame *f)
 	struct file* file = map_find(&curr_t->file_table, fd);
 	int32_t file_len = file_length(file);
 	f->eax = file_len;
+	break;
+      }
+    case SYS_PLIST:
+      {
+	printf ("### PRINTING LIST!!!!!!\n");
+	process_print_list();
+	break;
+      }
+    case SYS_SLEEP:
+      {
+	int64_t millis = (int64_t)esp[1];
+	timer_sleep(millis);
+	break;
+      }
+    case SYS_EXEC:
+      {
+	const char* cmd = (char*)esp[1];
+	int cid = process_execute(cmd);
+	f->eax = cid;
 	break;
       }
     default:

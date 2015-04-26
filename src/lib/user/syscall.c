@@ -141,6 +141,19 @@ close (int fd)
   syscall1 (SYS_CLOSE, fd);
 }
 
+/* ADDED */
+void
+plist(void)
+{
+  syscall0 (SYS_PLIST);
+}
+
+/* ADDED */
+void
+sleep(int millis){
+  syscall1 (SYS_SLEEP, millis);
+}
+
 mapid_t
 mmap (int fd, void *addr)
 {

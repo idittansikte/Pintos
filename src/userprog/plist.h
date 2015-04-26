@@ -28,6 +28,38 @@
      clean, readable format.
      
  */
+#include <stdbool.h>
 
+#define PLIST_SIZE 40
+
+typedef struct Node node_t;
+typedef int pid_t;
+
+struct Node{
+  bool free;
+  pid_t process_id;
+  pid_t parent_id;
+  int exit_status;
+  bool alive;
+  bool parent_alive;
+  //phore??
+};
+
+struct plist{
+  node_t content[PLIST_SIZE]; 
+};
+
+void plist_init(struct plist* l);
+
+int plist_insert(struct plist* l, pid_t parent_id, pid_t process_id);
+
+pid_t plist_get_parent(struct plist* l, pid_t process_id);
+bool plist_alive(struct plist* l, pid_t process_id);
+bool plist_parent_alive(struct plist* l, pid_t process_id);
+int plist_get_exit_status(struct plist* l, pid_t process_id);
+
+void plist_print(struct plist* l);
+
+void plist_remove(struct plist* l, pid_t process_id);
 
 #endif

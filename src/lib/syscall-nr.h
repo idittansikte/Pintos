@@ -18,6 +18,9 @@ enum
     SYS_SEEK,                   /* Change position in a file. */
     SYS_TELL,                   /* Report current position in a file. */
     SYS_CLOSE,                  /* Close a file. */
+    /* ADDED */
+    SYS_PLIST,                  /* List running processes. */
+    SYS_SLEEP,                  /* Pause process. */
 
     /* Memory mapping system calls. */
     SYS_MMAP,                   /* Map a file into memory. */

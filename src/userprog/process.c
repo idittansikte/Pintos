@@ -20,7 +20,7 @@
 #include "lib/kernel/list.h"
 
 #include "userprog/flist.h"
-#include "userprog/plist.h"
+//#include "userprog/plist.h"
 
 /* HACK defines code you must remove and implement in a proper way */
 #define HACK
@@ -30,6 +30,7 @@
  * the process subsystem. */
 void process_init(void)
 {
+  plist_init(&process_list);
 }
 
 /* This function is currently never called. As thread_exit does not
@@ -43,8 +44,9 @@ void process_exit(int status UNUSED)
 
 /* Print a list of all running processes. The list shall include all
  * relevant debug information in a clean, readable format. */
-void process_print_list()
+void process_print_list(void)
 {
+  plist_print(&process_list);
 }
 
 
@@ -52,6 +54,7 @@ struct parameters_to_start_process
 {
   char* command_line;
   bool success;
+  int parent_id;
   struct semaphore sema_wait_thread;
 };
 
@@ -84,7 +87,9 @@ process_execute (const char *command_line)
   /* COPY command line out of parent process memory */
   arguments.command_line = malloc(command_line_size);
   strlcpy(arguments.command_line, command_line, command_line_size);
-  arguments.success = false;
+
+  arguments.success = false; // MAke sure success is initzilized to false
+  arguments.parent_id = thread_current()->tid; // Give thread ID to child
 
   strlcpy_first_word (debug_name, command_line, 64);
 
@@ -259,7 +264,7 @@ start_process (struct parameters_to_start_process* parameters)
   
   if (success)
   {
-    /* We managed to load the new program to a process, and have
+    /* 1. We managed to load the new program to a process, and have
        allocated memory for a process stack. The stack top is in
        if_.esp, now we must prepare and place the arguments to main on
        the stack. */
@@ -268,16 +273,22 @@ start_process (struct parameters_to_start_process* parameters)
        "pretend" the arguments are present on the stack. A normal
        C-function expects the stack to contain, in order, the return
        address, the first argument, the second argument etc. */
-    
+ 
     //HACK if_.esp -= 12; /* Unacceptable solution. */
-    
+
+    /* Complete solution to setup esp and process stack */
+
+    if_.esp = setup_main_stack(parameters->command_line, if_.esp);
+
     /* The stack and stack pointer should be setup correct just before
        the process start, so this is the place to dump stack content
        for debug purposes. Disable the dump when it works. */
-    if_.esp = setup_main_stack(parameters->command_line, if_.esp);
 
-    dump_stack ( PHYS_BASE + 15, PHYS_BASE - if_.esp + 16 );
+    // dump_stack ( PHYS_BASE + 15, PHYS_BASE - if_.esp + 16 );
 
+    /* 2. Insert process into process table */
+    
+    plist_insert(&process_list, parameters->parent_id, thread_current()->tid);
   }
 
   debug("%s#%d: start_process(\"%s\") DONE\n",
@@ -351,6 +362,7 @@ process_cleanup (void)
   
   debug("%s#%d: process_cleanup() ENTERED\n", cur->name, cur->tid);
   map_clean(&cur->file_table); // Cleanup per process file table
+  plist_remove(&process_list, cur->tid);
   /* Later tests DEPEND on this output to work correct. You will have
    * to find the actual exit status in your process list. It is
    * important to do this printf BEFORE you tell the parent process

@@ -38,8 +38,10 @@ void process_init(void)
  * instead. Note however that all cleanup after a process must be done
  * in process_cleanup, and that process_cleanup are already called
  * from thread_exit - do not call cleanup twice! */
-void process_exit(int status UNUSED)
+void process_exit(int status)
 {
+  plist_set_exit_status(&process_list, thread_current()->tid, status);
+  thread_exit();
 }
 
 /* Print a list of all running processes. The list shall include all
@@ -288,7 +290,7 @@ start_process (struct parameters_to_start_process* parameters)
 
     /* 2. Insert process into process table */
     
-    plist_insert(&process_list, parameters->parent_id, thread_current()->tid);
+    plist_insert(&process_list, parameters->parent_id, thread_current()->tid, file_name);
   }
 
   debug("%s#%d: start_process(\"%s\") DONE\n",
@@ -358,7 +360,7 @@ process_cleanup (void)
 {
   struct thread  *cur = thread_current ();
   uint32_t       *pd  = cur->pagedir;
-  int status = -1;
+  int status = -1; // FIXA?
   
   debug("%s#%d: process_cleanup() ENTERED\n", cur->name, cur->tid);
   map_clean(&cur->file_table); // Cleanup per process file table

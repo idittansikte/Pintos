@@ -38,6 +38,7 @@ typedef int pid_t;
 struct Node{
   bool free;
   pid_t process_id;
+  char process_name[64];
   pid_t parent_id;
   int exit_status;
   bool alive;
@@ -51,13 +52,13 @@ struct plist{
 
 void plist_init(struct plist* l);
 
-int plist_insert(struct plist* l, pid_t parent_id, pid_t process_id);
+int plist_insert(struct plist* l, pid_t parent_id, pid_t process_id, char name[]);
 
 pid_t plist_get_parent(struct plist* l, pid_t process_id);
 bool plist_alive(struct plist* l, pid_t process_id);
 bool plist_parent_alive(struct plist* l, pid_t process_id);
 int plist_get_exit_status(struct plist* l, pid_t process_id);
-
+void plist_set_exit_status(struct plist* l, pid_t process_id, int exit_status);
 void plist_print(struct plist* l);
 
 void plist_remove(struct plist* l, pid_t process_id);

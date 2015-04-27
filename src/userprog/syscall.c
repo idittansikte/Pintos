@@ -60,7 +60,7 @@ syscall_handler (struct intr_frame *f)
     case SYS_EXIT:
       {
 	DBG("# Running sys_call exit() Return value: %i %i %s", esp[1], __LINE__, __FILE__);
-        thread_exit();
+        process_exit((int)esp[1]);
 	break;
       }
     case SYS_READ:
@@ -197,7 +197,6 @@ syscall_handler (struct intr_frame *f)
       }
     case SYS_PLIST:
       {
-	printf ("### PRINTING LIST!!!!!!\n");
 	process_print_list();
 	break;
       }

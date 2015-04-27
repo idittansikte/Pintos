@@ -78,6 +78,7 @@ int main(int argc, char* argv[])
     
     exec(cmd);
     
+    //printf("Now printing out plist!\n");
     plist();
 
     /* since we do not have the wait systemcall yet */

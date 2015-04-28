@@ -264,6 +264,7 @@ start_process (struct parameters_to_start_process* parameters)
         thread_current()->tid,
         success);
   
+
   if (success)
   {
     /* 1. We managed to load the new program to a process, and have
@@ -290,7 +291,13 @@ start_process (struct parameters_to_start_process* parameters)
 
     /* 2. Insert process into process table */
     
-    plist_insert(&process_list, parameters->parent_id, thread_current()->tid, file_name);
+    if(plist_insert(&process_list, parameters->parent_id, thread_current()->tid, file_name) == -1){
+      success = false;
+      debug("%s#%d: start_process(...): could not insert process in process list.%d\n",
+	    thread_current()->name,
+	    thread_current()->tid,
+	    success);
+    }
   }
 
   debug("%s#%d: start_process(\"%s\") DONE\n",
@@ -336,6 +343,10 @@ process_wait (int child_id)
 
   debug("%s#%d: process_wait(%d) ENTERED\n",
         cur->name, cur->tid, child_id);
+
+  status = plist_get_exit_status(&process_list, child_id);
+
+
   /* Yes! You need to do something good here ! */
   debug("%s#%d: process_wait(%d) RETURNS %d\n",
         cur->name, cur->tid, child_id, status);
@@ -360,7 +371,7 @@ process_cleanup (void)
 {
   struct thread  *cur = thread_current ();
   uint32_t       *pd  = cur->pagedir;
-  int status = -1; // FIXA?
+  int status = plist_exit_status(&process_list, cur->tid);
   
   debug("%s#%d: process_cleanup() ENTERED\n", cur->name, cur->tid);
   map_clean(&cur->file_table); // Cleanup per process file table

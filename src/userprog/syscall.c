@@ -213,6 +213,13 @@ syscall_handler (struct intr_frame *f)
 	f->eax = cid;
 	break;
       }
+    case SYS_WAIT:
+      {
+	int child_id = (int)esp[1];
+	int status = process_wait(child_id);
+	f->eax = status;
+	break;
+      }
     default:
       {
 	printf ("Executed an unknown system call!\n");

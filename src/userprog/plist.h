@@ -29,9 +29,10 @@
      
  */
 #include <stdbool.h>
+#include "threads/synch.h"
 
-#define PLIST_SIZE 40
-
+#define PLIST_SIZE 300
+struct lock lock_plist;
 typedef struct Node node_t;
 typedef int pid_t;
 
@@ -43,7 +44,7 @@ struct Node{
   int exit_status;
   bool alive;
   bool parent_alive;
-  //phore??
+  struct semaphore sema_wait;
 };
 
 struct plist{
@@ -60,6 +61,8 @@ bool plist_parent_alive(struct plist* l, pid_t process_id);
 int plist_get_exit_status(struct plist* l, pid_t process_id);
 void plist_set_exit_status(struct plist* l, pid_t process_id, int exit_status);
 void plist_print(struct plist* l);
+
+int plist_exit_status(struct plist* l, pid_t process_id);
 
 void plist_remove(struct plist* l, pid_t process_id);
 

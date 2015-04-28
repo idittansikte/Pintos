@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
       snprintf(cmd, 15, "dummy %i", j * simul + i);
       pid[i] = exec(cmd);
     }
-    
+    plist();
     /* There will never be more than 'simul' processes running
      * simultaneously, but in total there will be a lot of processes
      * (repeat * simul). Just as you can expect in a real system.
@@ -85,6 +85,8 @@ int main(int argc, char* argv[])
       }
       wait(pid[i]);      
     }
+    plist();
   }
+  plist();
   return 0;
 }

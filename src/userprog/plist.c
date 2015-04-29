@@ -74,7 +74,7 @@ int index = plist_find(l, process_id);
   return false;
 }
 
-int plist_get_exit_status(struct plist* l, pid_t process_id){
+int plist_get_exit_status(struct plist* l, pid_t process_id){ // Fixa så att barn relaterat till förälder osv.
   int index = plist_find(l, process_id);
   if(index != -1){
     sema_down(&(l->content[index].sema_wait));

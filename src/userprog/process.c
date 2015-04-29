@@ -287,7 +287,7 @@ start_process (struct parameters_to_start_process* parameters)
        the process start, so this is the place to dump stack content
        for debug purposes. Disable the dump when it works. */
 
-    // dump_stack ( PHYS_BASE + 15, PHYS_BASE - if_.esp + 16 );
+     dump_stack ( PHYS_BASE + 15, PHYS_BASE - if_.esp + 16 );
 
     /* 2. Insert process into process table */
     

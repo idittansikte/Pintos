@@ -8,6 +8,7 @@
 #include "threads/malloc.h"
 #include "threads/synch.h"
 
+struct lock lock_open_inodes;
 
 /* Identifies an inode. */
 #define INODE_MAGIC 0x494e4f44
@@ -65,6 +66,7 @@ void
 inode_init (void) 
 {
   list_init (&open_inodes);
+  lock_init(&lock_open_inodes);
 }
 
 /* Initializes an inode with LENGTH bytes of data and
@@ -117,7 +119,7 @@ inode_open (disk_sector_t sector)
   struct list_elem *e;
   struct inode *inode;
 
-  
+  lock_acquire(&lock_open_inodes);
   /* Check whether this inode is already open. */
   for (e = list_begin (&open_inodes); e != list_end (&open_inodes);
        e = list_next (e)) 
@@ -126,7 +128,8 @@ inode_open (disk_sector_t sector)
       if (inode->sector == sector) 
         {
           inode_reopen (inode);
-          return inode; 
+	  goto done;
+          //return inode; 
         }
     }
 
@@ -134,7 +137,8 @@ inode_open (disk_sector_t sector)
   inode = malloc (sizeof *inode);
   if (inode == NULL)
   {
-    return NULL;
+    goto done;
+    //return NULL;
   }
   
   list_push_front (&open_inodes, &inode->elem);
@@ -147,7 +151,8 @@ inode_open (disk_sector_t sector)
   lock_init(&inode->lock_file); // Initialize lock
 
   disk_read (filesys_disk, inode->sector, &inode->data);
-  
+ done:
+  lock_release(&lock_open_inodes);
   return inode;
 }
 
@@ -179,7 +184,7 @@ inode_close (struct inode *inode)
   if (inode == NULL)
     return;
 
-    
+  lock_acquire(&lock_open_inodes);
   /* Release resources if this was the last opener. */
   if (--inode->open_cnt == 0)
     {
@@ -196,8 +201,9 @@ inode_close (struct inode *inode)
         }
 
       free (inode);
-      return;
     }
+  lock_release(&lock_open_inodes);
+  return;
 }
 
 /* Marks INODE to be deleted when it is closed by the last caller who
@@ -337,3 +343,12 @@ inode_length (const struct inode *inode)
   return inode->data.length;
 }
 
+void inode_lock_acquire(struct inode* inode)
+{
+  lock_acquire(&inode->lock_file);
+}
+
+void inode_lock_release(struct inode* inode)
+{
+  lock_release(&inode->lock_file);
+}

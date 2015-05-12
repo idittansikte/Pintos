@@ -133,7 +133,7 @@ syscall_handler (struct intr_frame *f)
 	if(fp != NULL){
 	  struct thread* curr_t = thread_current();
 	  int fd = map_insert(&curr_t->file_table, fp);
-	  DBG("# open fd = %i | %i %s |", fd, __LINE__, __FILE__);
+	  //DBG("# open fd = %i | %i %s |", fd, __LINE__, __FILE__);
 	  f->eax = fd;
 	}
 	else{

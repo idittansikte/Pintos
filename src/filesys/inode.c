@@ -130,8 +130,8 @@ inode_open (disk_sector_t sector)
       inode = list_entry (e, struct inode, elem);
       if (inode->sector == sector) 
         {
-	  lock_release(&lock_open_inodes);
           inode_reopen (inode);
+	  lock_release(&lock_open_inodes);
           return inode; 
         }
     }
@@ -169,10 +169,10 @@ inode_reopen (struct inode *inode)
   if (inode != NULL)
   {
     //lock_acquire(&inode->lock_file);
-    lock_acquire(&lock_open_inodes);
+    //    lock_acquire(&lock_open_inodes);
     inode->open_cnt++;
     //    lock_release(&inode->lock_file);
-    lock_release(&lock_open_inodes);
+    //    lock_release(&lock_open_inodes);
   }
   return inode;
 }
@@ -246,12 +246,9 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
   uint8_t *bounce = NULL;
   
   lock_acquire(&inode->lock_readers);
-  if(++inode->readers_cnt == 1){
-    lock_release(&inode->lock_readers);
+  if(++inode->readers_cnt == 1)
     sema_down(&inode->sema_read_write);
-  }
-  else
-    lock_release(&inode->lock_readers);
+  lock_release(&inode->lock_readers);
 
   while (size > 0) 
     {
@@ -296,12 +293,9 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
   free (bounce);
 
   lock_acquire(&inode->lock_readers);
-  if(--inode->readers_cnt == 0){
-    lock_release(&inode->lock_readers);
+  if(--inode->readers_cnt == 0)
     sema_up(&inode->sema_read_write);
-  }
-  else
-    lock_release(&inode->lock_readers);
+  lock_release(&inode->lock_readers);
 
   return bytes_read;
 }

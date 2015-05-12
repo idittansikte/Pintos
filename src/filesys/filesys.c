@@ -9,6 +9,7 @@
 #include "devices/disk.h"
 #include "threads/synch.h"
 
+struct lock lock_filesys;
 /* The disk that contains the file system. */
 struct disk *filesys_disk;
 
@@ -19,6 +20,7 @@ static void do_format (void);
 void
 filesys_init (bool format) 
 {
+  lock_init(&lock_filesys);
   filesys_disk = disk_get (0, 1);
   if (filesys_disk == NULL)
     PANIC ("hd0:1 (hdb) not present, file system initialization failed");
@@ -47,6 +49,7 @@ filesys_done (void)
 bool
 filesys_create (const char *name, off_t initial_size) 
 {
+  lock_acquire(&lock_filesys);
   disk_sector_t inode_sector = 0;
   struct dir *dir = dir_open_root ();
   bool success = (dir != NULL
@@ -57,6 +60,7 @@ filesys_create (const char *name, off_t initial_size)
     free_map_release (inode_sector, 1);
   dir_close (dir);
   
+  lock_release(&lock_filesys);
   return success;
 }
 

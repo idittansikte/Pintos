@@ -40,6 +40,9 @@ struct inode
     bool removed;                       /* True if deleted, false otherwise. */
     struct inode_disk data;             /* Inode content. */
     struct lock lock_file;
+    int readers_cnt;
+    struct semaphore sema_read_write;
+    struct lock lock_readers;
   };
 
 
@@ -127,9 +130,9 @@ inode_open (disk_sector_t sector)
       inode = list_entry (e, struct inode, elem);
       if (inode->sector == sector) 
         {
+	  lock_release(&lock_open_inodes);
           inode_reopen (inode);
-	  goto done;
-          //return inode; 
+          return inode; 
         }
     }
 
@@ -142,13 +145,16 @@ inode_open (disk_sector_t sector)
   }
   
   list_push_front (&open_inodes, &inode->elem);
-  
+
   /* Initialize. */
   inode->sector = sector;
   inode->open_cnt = 1;
   inode->removed = false;
 
   lock_init(&inode->lock_file); // Initialize lock
+  lock_init(&inode->lock_readers);
+  sema_init(&inode->sema_read_write, 1);
+  inode->readers_cnt = 0;
 
   disk_read (filesys_disk, inode->sector, &inode->data);
  done:
@@ -162,7 +168,11 @@ inode_reopen (struct inode *inode)
 {
   if (inode != NULL)
   {
+    //lock_acquire(&inode->lock_file);
+    lock_acquire(&lock_open_inodes);
     inode->open_cnt++;
+    //    lock_release(&inode->lock_file);
+    lock_release(&lock_open_inodes);
   }
   return inode;
 }
@@ -184,24 +194,32 @@ inode_close (struct inode *inode)
   if (inode == NULL)
     return;
 
-  lock_acquire(&lock_open_inodes);
   /* Release resources if this was the last opener. */
+  //lock_acquire(&inode->lock_file);
+  lock_acquire(&lock_open_inodes);
   if (--inode->open_cnt == 0)
     {
+      //lock_release(&inode->lock_file);
       /* Remove from inode list. */
+
       list_remove (&inode->elem);
-      
+
  
       /* Deallocate blocks if the file is marked as removed. */
+      //lock_acquire(&inode->lock_file);
       if (inode->removed) 
         {
           free_map_release (inode->sector, 1);
           free_map_release (inode->data.start,
                             bytes_to_sectors (inode->data.length)); 
         }
+      else
+	//lock_release(&inode->lock_file);
 
       free (inode);
     }
+  //    lock_release(&inode->lock_file);
+
   lock_release(&lock_open_inodes);
   return;
 }
@@ -212,7 +230,9 @@ void
 inode_remove (struct inode *inode) 
 {
   ASSERT (inode != NULL);
+  lock_acquire(&inode->lock_file);
   inode->removed = true;
+  lock_release(&inode->lock_file);
 }
 
 /* Reads SIZE bytes from INODE into BUFFER, starting at position OFFSET.
@@ -225,6 +245,14 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
   off_t bytes_read = 0;
   uint8_t *bounce = NULL;
   
+  lock_acquire(&inode->lock_readers);
+  if(++inode->readers_cnt == 1){
+    lock_release(&inode->lock_readers);
+    sema_down(&inode->sema_read_write);
+  }
+  else
+    lock_release(&inode->lock_readers);
+
   while (size > 0) 
     {
       /* Disk sector to read, starting byte offset within sector. */
@@ -267,6 +295,14 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
     }
   free (bounce);
 
+  lock_acquire(&inode->lock_readers);
+  if(--inode->readers_cnt == 0){
+    lock_release(&inode->lock_readers);
+    sema_up(&inode->sema_read_write);
+  }
+  else
+    lock_release(&inode->lock_readers);
+
   return bytes_read;
 }
 
@@ -283,7 +319,8 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
   off_t bytes_written = 0;
   uint8_t *bounce = NULL;
 
-    
+  sema_down(&inode->sema_read_write);
+
   while (size > 0) 
     {
       /* Sector to write, starting byte offset within sector. */
@@ -332,6 +369,8 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
       bytes_written += chunk_size;
     }
   free (bounce);
+  
+  sema_up(&inode->sema_read_write);
 
   return bytes_written;
 }

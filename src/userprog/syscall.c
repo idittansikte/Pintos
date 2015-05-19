@@ -44,11 +44,69 @@ const int argc[] = {
   0
 };
 
+
+/* Kontrollera alla adresser från och med start till och inte med
+ * (start+length). */
+static bool 
+verify_fix_length(char* start, unsigned length)
+{
+  if( start + length >= (char*)PHYS_BASE)
+    return false;
+
+  char* cur_page = (char*)pg_round_down(start);
+
+  for(;;)
+    {
+      if(pagedir_get_page(thread_current()->pagedir, cur_page) == NULL)
+	return false;
+
+      cur_page += PGSIZE;
+      if(cur_page >= start + length)
+	return true;
+    }
+}
+
+/* Kontrollera alla adresser från och med start till och med den
+ * adress som först innehåller ett noll-tecken, `\0'. (C-strängar
+ * lagras på detta sätt.) */
+static bool 
+verify_variable_length(char* start)
+{
+  char* cur_page = (char*)pg_round_down((void*)start);
+  char* cur_char = start;
+  for(;;)
+    {
+      if(pagedir_get_page(thread_current()->pagedir, (void*)cur_page) == NULL)
+	return false;
+      
+      for(;;)
+	{
+	  if(cur_char >= (char*)PHYS_BASE)
+	    return false;
+
+	  if(*cur_char != '\0')
+	    ++cur_char;
+	  else
+	    return true;
+	  
+	  if(cur_char == cur_page+PGSIZE)
+	    break;
+	}
+      cur_page += PGSIZE;
+    }
+}
+
+
 static void
 syscall_handler (struct intr_frame *f) 
 {
   int32_t* esp = (int32_t*)f->esp;
   
+  if(pagedir_get_page(thread_current()->pagedir, esp) == NULL){
+    process_exit(-1);
+    return;
+  }
+      
   switch ( esp[0] /* retrive syscall number */ )
     {
     case SYS_HALT:
@@ -69,6 +127,12 @@ syscall_handler (struct intr_frame *f)
 	int fd = (int)esp[1];
         uint8_t *buffer = (uint8_t*)esp[2];
 	unsigned buffersize = (unsigned)esp[3];
+
+	if(verify_fix_length((void*)buffer, buffersize) == false){
+	  process_exit(-1);
+	  return;
+	}
+
 	if(fd == STDIN_FILENO){
 	  unsigned i;
 	  for(i = 0; i < buffersize; ++i){
@@ -226,8 +290,9 @@ syscall_handler (struct intr_frame *f)
       
 	printf ("Stack top + 0: %d\n", esp[0]);
 	printf ("Stack top + 1: %d\n", esp[1]);
-      
-	thread_exit ();
+	
+	process_exit(-1);
+	//thread_exit ();
       }
     }
 }

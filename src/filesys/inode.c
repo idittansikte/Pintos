@@ -168,11 +168,9 @@ inode_reopen (struct inode *inode)
 {
   if (inode != NULL)
   {
-    //lock_acquire(&inode->lock_file);
-    //    lock_acquire(&lock_open_inodes);
+    lock_acquire(&inode->lock_file);
     inode->open_cnt++;
-    //    lock_release(&inode->lock_file);
-    //    lock_release(&lock_open_inodes);
+    lock_release(&inode->lock_file);
   }
   return inode;
 }
@@ -195,11 +193,11 @@ inode_close (struct inode *inode)
     return;
 
   /* Release resources if this was the last opener. */
-  //lock_acquire(&inode->lock_file);
   lock_acquire(&lock_open_inodes);
+  lock_acquire(&inode->lock_file);
   if (--inode->open_cnt == 0)
     {
-      //lock_release(&inode->lock_file);
+      lock_release(&inode->lock_file);
       /* Remove from inode list. */
 
       list_remove (&inode->elem);
@@ -218,7 +216,8 @@ inode_close (struct inode *inode)
 
       free (inode);
     }
-  //    lock_release(&inode->lock_file);
+  else
+    lock_release(&inode->lock_file);
 
   lock_release(&lock_open_inodes);
   return;

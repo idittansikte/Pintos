@@ -131,8 +131,8 @@ inode_open (disk_sector_t sector)
       if (inode->sector == sector) 
         {
           inode_reopen (inode);
-	  lock_release(&lock_open_inodes);
-          return inode; 
+          goto done;
+	  //return inode; 
         }
     }
 
@@ -193,33 +193,29 @@ inode_close (struct inode *inode)
     return;
 
   /* Release resources if this was the last opener. */
-  lock_acquire(&lock_open_inodes);
   lock_acquire(&inode->lock_file);
   if (--inode->open_cnt == 0)
     {
       lock_release(&inode->lock_file);
       /* Remove from inode list. */
-
+      lock_acquire(&lock_open_inodes);
       list_remove (&inode->elem);
-
+      lock_release(&lock_open_inodes);
  
       /* Deallocate blocks if the file is marked as removed. */
-      //lock_acquire(&inode->lock_file);
       if (inode->removed) 
         {
           free_map_release (inode->sector, 1);
           free_map_release (inode->data.start,
                             bytes_to_sectors (inode->data.length)); 
         }
-      else
-	//lock_release(&inode->lock_file);
 
       free (inode);
     }
   else
-    lock_release(&inode->lock_file);
-
-  lock_release(&lock_open_inodes);
+    {
+      lock_release(&inode->lock_file);
+    }
   return;
 }
 

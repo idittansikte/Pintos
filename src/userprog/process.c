@@ -372,8 +372,9 @@ process_cleanup (void)
   struct thread  *cur = thread_current ();
   uint32_t       *pd  = cur->pagedir;
   int status = plist_exit_status(&process_list, cur->tid);
-  
+
   debug("%s#%d: process_cleanup() ENTERED\n", cur->name, cur->tid);
+  printf("%s: exit(%d)\n", thread_name(), status);
   map_clean(&cur->file_table); // Cleanup per process file table
   plist_remove(&process_list, cur->tid);
   /* Later tests DEPEND on this output to work correct. You will have
@@ -383,7 +384,6 @@ process_cleanup (void)
    * that may sometimes poweroff as soon as process_wait() returns,
    * possibly before the prontf is completed.)
    */
-  printf("%s: exit(%d)\n", thread_name(), status);
   
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */

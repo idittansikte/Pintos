@@ -67,7 +67,7 @@ int index = plist_find(l, process_id);
 }
 
 bool plist_parent_alive(struct plist* l, pid_t process_id){
-int index = plist_find(l, process_id);
+  int index = plist_find(l, process_id);
   if(index != -1){
     return l->content[index].parent_alive;
   }
@@ -90,7 +90,6 @@ int plist_exit_status(struct plist* l, pid_t process_id){
   int index = plist_find(l, process_id);
   if(index != -1){
     return l->content[index].exit_status;
-    /* If someone (parent) take exit_status, nothing more to be done.*/
   }
   return -1;
 }
@@ -99,7 +98,7 @@ void plist_set_exit_status(struct plist* l, pid_t process_id, int exit_status){
   int index = plist_find(l, process_id);
   if(index != -1){
     l->content[index].exit_status = exit_status;
-    sema_up(&(l->content[index].sema_wait));
+    //sema_up(&(l->content[index].sema_wait));   DENNA SAK VI ÄNDRADE WALLA LA IN SEMA UP I REMOVE
   }
 }
 
@@ -146,5 +145,6 @@ void plist_remove(struct plist* l, pid_t process_id){
       l->content[index].free = true;
     }
      lock_release(&lock_plist);
+     sema_up(&(l->content[index].sema_wait));
   }
 }
